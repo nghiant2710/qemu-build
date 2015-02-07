@@ -1,0 +1,13 @@
+diff --git a/linux-user/syscall.c b/linux-user/syscall.c
+index aaac6a2..a10b49b 100644
+--- a/linux-user/syscall.c
++++ b/linux-user/syscall.c
+@@ -1963,8 +1963,6 @@ static abi_long do_socket(int domain, int type, int protocol)
+         return ret;
+     }
+ 
+-    if (domain == PF_NETLINK)
+-        return -TARGET_EAFNOSUPPORT;
+     ret = get_errno(socket(domain, type, protocol));
+     if (ret >= 0) {
+         ret = sock_flags_fixup(ret, target_type);
