@@ -2,14 +2,18 @@
 
 set -o errexit
 
-./configure --target-list="arm-linux-user" --static \
-	&& make -j $(nproc) \
-	&& strip arm-linux-user/qemu-arm \
-	&& mkdir -p qemu-$QEMU_VERSION \
-	&& cp arm-linux-user/qemu-arm qemu-$QEMU_VERSION/qemu-arm-static
 
-tar -cvzf qemu-$QEMU_VERSION.tar.gz qemu-$QEMU_VERSION
-SHA256=$(sha256sum qemu-$QEMU_VERSION.tar.gz)
+BINARY_NAME="qemu-$TARGET-static"
+PACKAGE_NAME="qemu-$QEMU_VERSION-$TARGET"
+
+./configure --target-list="$TARGET-linux-user" --static \
+	&& make -j $(nproc) \
+	&& strip "$TARGET-linux-user/qemu-$TARGET" \
+	&& mkdir -p "$PACKAGE_NAME" \
+	&& cp "$TARGET-linux-user/qemu-$TARGET" "$PACKAGE_NAME/$BINARY_NAME"
+
+tar -cvzf "$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
+SHA256=$(sha256sum "$PACKAGE_NAME.tar.gz")
 echo $SHA256
 if [ -z "$ACCOUNT" ] || [ -z "$REPO" ] || [ -z "$ACCESS_TOKEN" ]; then
 	echo "Please set value for ACCOUNT, REPO and ACCESS_TOKEN!"
@@ -20,10 +24,10 @@ fi
 rm -f request.json response.json
 cat > request.json <<-EOF
 {
-    "tag_name": "$QEMU_VERSION",
+    "tag_name": "$PACKAGE_NAME",
     "target_commitish": "$sourceBranch",
     "name": "v$QEMU_VERSION",
-    "body": "Release of version $QEMU_VERSION.\nSHA256: ${SHA256% *}",
+    "body": "Release of version $PACKAGE_NAME.\nSHA256: ${SHA256% *}",
     "draft": false,
     "prerelease": false
 }
@@ -34,4 +38,4 @@ RELEASE_ID=$(cat response.json | ./jq '.id')
 echo "RELEASE_ID=$RELEASE_ID"
 
 # Upload data
-curl -H "Authorization:token $ACCESS_TOKEN" -H "Content-Type:application/x-gzip" --data-binary "@qemu-$QEMU_VERSION.tar.gz" https://uploads.github.com/repos/$ACCOUNT/$REPO/releases/$RELEASE_ID/assets?name=qemu-$QEMU_VERSION.tar.gz
+curl -H "Authorization:token $ACCESS_TOKEN" -H "Content-Type:application/x-gzip" --data-binary "@$PACKAGE_NAME.tar.gz" https://uploads.github.com/repos/$ACCOUNT/$REPO/releases/$RELEASE_ID/assets?name=$PACKAGE_NAME.tar.gz
