@@ -1,7 +1,4 @@
-FROM debian:jessie
-
-ENV QEMU_VERSION 2.8.1-resin-rc1
-ENV QEMU_SHA256 d4f00bda10cddbc20907ab05c4c64cef984b07784f0aa9913b365be96eae46d2
+FROM debian:stretch
 
 RUN apt-get -q update \
         && apt-get -qqy install \
@@ -15,14 +12,10 @@ RUN apt-get -q update \
                 jq \
         && rm -rf /var/lib/apt/lists/*
 
-RUN curl -SL https://codeload.github.com/resin-io/qemu/tar.gz/v${QEMU_VERSION} -o qemu-${QEMU_VERSION}.tar.gz \
-        && echo "${QEMU_SHA256}  qemu-${QEMU_VERSION}.tar.gz" > qemu-${QEMU_VERSION}.tar.gz.sha256sum \
-        && sha256sum -c qemu-${QEMU_VERSION}.tar.gz.sha256sum \
-        && tar -xzf qemu-${QEMU_VERSION}.tar.gz \
-        && rm qemu-${QEMU_VERSION}.tar.gz*
+RUN git clone https://github.com/balena-io/qemu.git
 
-WORKDIR /qemu-${QEMU_VERSION}
+COPY build.sh /qemu/
 
-COPY . /qemu-${QEMU_VERSION}/
+WORKDIR /qemu
 
 CMD ./build.sh

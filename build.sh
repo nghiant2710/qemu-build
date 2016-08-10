@@ -2,6 +2,8 @@
 
 set -o errexit
 
+git checkout "$RELEASE_COMMIT"
+
 TARGETS="arm aarch64"
 
 for TARGET in $TARGETS; do
@@ -31,7 +33,7 @@ rm -f request.json response.json
 cat > request.json <<-EOF
 {
     "tag_name": "v$QEMU_VERSION",
-    "target_commitish": "$sourceBranch",
+    "target_commitish": "$RELEASE_BRANCH",
     "name": "v$QEMU_VERSION",
     "body": "Release of version v$QEMU_VERSION. \nqemu-$QEMU_VERSION-arm.tar.gz - SHA256: ${ARM_SHA256% *}. \nqemu-$QEMU_VERSION-aarch64.tar.gz - SHA256: ${AARCH64_SHA256% *}",
     "draft": false,
