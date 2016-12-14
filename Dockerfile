@@ -1,7 +1,7 @@
 FROM debian:jessie
 
-ENV QEMU_VERSION 2.7.0-resin-rc1
-ENV QEMU_SHA256 02d9140c8cdcff8c5067d5eb9c9bd4ee30aa4f8e4816720654d3708f6ac37874
+ENV QEMU_VERSION 2.7.0-resin-rc2
+ENV QEMU_SHA256 85ee74daf6d7874bbcd68c2e89f55e56e4cb5fadeaa3930430e2c4c05f6dda2b
 
 RUN apt-get -q update \
         && apt-get -qqy install \
