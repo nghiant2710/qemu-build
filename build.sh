@@ -6,7 +6,7 @@ set -o errexit
 BINARY_NAME="qemu-$TARGET-static"
 PACKAGE_NAME="qemu-$QEMU_VERSION-$TARGET"
 
-./configure --target-list="$TARGET-linux-user" --static \
+./configure --target-list="$TARGET-linux-user" --static --extra-cflags="-DCONFIG_RTNETLINK" \
 	&& make -j $(nproc) \
 	&& strip "$TARGET-linux-user/qemu-$TARGET" \
 	&& mkdir -p "$PACKAGE_NAME" \
