@@ -2,19 +2,25 @@
 
 set -o errexit
 
+TARGETS="arm aarch64"
 
-BINARY_NAME="qemu-$TARGET-static"
-PACKAGE_NAME="qemu-$QEMU_VERSION-$TARGET"
+for TARGET in $TARGETS; do
+	BINARY_NAME="qemu-$TARGET-static"
+	PACKAGE_NAME="qemu-$QEMU_VERSION-$TARGET"
 
-./configure --target-list="$TARGET-linux-user" --static --extra-cflags="-DCONFIG_RTNETLINK" \
-	&& make -j $(nproc) \
-	&& strip "$TARGET-linux-user/qemu-$TARGET" \
-	&& mkdir -p "$PACKAGE_NAME" \
-	&& cp "$TARGET-linux-user/qemu-$TARGET" "$PACKAGE_NAME/$BINARY_NAME"
+	./configure --target-list="$TARGET-linux-user" --static --extra-cflags="-DCONFIG_RTNETLINK" \
+		&& make -j $(nproc) \
+		&& strip "$TARGET-linux-user/qemu-$TARGET" \
+		&& mkdir -p "$PACKAGE_NAME" \
+		&& cp "$TARGET-linux-user/qemu-$TARGET" "$PACKAGE_NAME/$BINARY_NAME"
 
-tar -cvzf "$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
-SHA256=$(sha256sum "$PACKAGE_NAME.tar.gz")
-echo $SHA256
+	tar -cvzf "$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
+done
+
+ARM_SHA256=$(sha256sum "qemu-$QEMU_VERSION-arm.tar.gz")
+AARCH64_SHA256=$(sha256sum "qemu-$QEMU_VERSION-aarch64.tar.gz")
+echo "arm: $ARM_SHA256, aarch64: $AARCH64_SHA256"
+
 if [ -z "$ACCOUNT" ] || [ -z "$REPO" ] || [ -z "$ACCESS_TOKEN" ]; then
 	echo "Please set value for ACCOUNT, REPO and ACCESS_TOKEN!"
 	exit 1
@@ -24,10 +30,10 @@ fi
 rm -f request.json response.json
 cat > request.json <<-EOF
 {
-    "tag_name": "$PACKAGE_NAME",
+    "tag_name": "v$QEMU_VERSION",
     "target_commitish": "$sourceBranch",
     "name": "v$QEMU_VERSION",
-    "body": "Release of version $PACKAGE_NAME.\nSHA256: ${SHA256% *}",
+    "body": "Release of version v$QEMU_VERSION. \nqemu-$QEMU_VERSION-arm.tar.gz - SHA256: ${ARM_SHA256% *}. \nqemu-$QEMU_VERSION-aarch64.tar.gz - SHA256: ${AARCH64_SHA256% *}",
     "draft": false,
     "prerelease": false
 }
@@ -41,5 +47,10 @@ echo "RELEASE_ID=$RELEASE_ID"
 
 # Upload data
 curl -H "Authorization:token $ACCESS_TOKEN" -H "Content-Type:application/x-gzip" \
-	--data-binary "@$PACKAGE_NAME.tar.gz" \
-	"https://uploads.github.com/repos/$ACCOUNT/$REPO/releases/$RELEASE_ID/assets?name=$PACKAGE_NAME.tar.gz"
+	--data-binary "@qemu-$QEMU_VERSION-arm.tar.gz" \
+	"https://uploads.github.com/repos/$ACCOUNT/$REPO/releases/$RELEASE_ID/assets?name=qemu-$QEMU_VERSION-arm.tar.gz"
+
+# Upload data
+curl -H "Authorization:token $ACCESS_TOKEN" -H "Content-Type:application/x-gzip" \
+	--data-binary "@qemu-$QEMU_VERSION-aarch64.tar.gz" \
+	"https://uploads.github.com/repos/$ACCOUNT/$REPO/releases/$RELEASE_ID/assets?name=qemu-$QEMU_VERSION-aarch64.tar.gz"
